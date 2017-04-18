@@ -1,20 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
+#include "mylib.h"
 
-#define PORT (in_port_t)50000
-#define BUF_LEN 512
-
-int main(void) {
+int setup_client(char *hostname, in_port_t port) {
     struct hostent *server_ent;
     struct sockaddr_in server;
-    int soc_waiting;
     int soc;
-    char hostname[] = "ayu020";
-    char buf[BUF_LEN];
 
     if ((server_ent = gethostbyname(hostname)) == NULL ) {
         perror("gethostbyname");
@@ -25,23 +14,20 @@ int main(void) {
 
     memset((char *)&server, 0, sizeof(server));
     server.sin_family = AF_INET;
-    server.sin_port = htons(PORT);
+    server.sin_port = htons(port);
     memcpy((char *)&server.sin_addr, server_ent->h_addr, server_ent->h_length);
-
 
     if ((soc = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
         perror("socket");
-        exit(1);
+        return -1;
     }
 
     if (connect(soc, (struct sockaddr *)&server, sizeof(server)) == -1) {
         perror("connect");
-        exit(1);
+        return -1;
     }
 
-    write(stderr,"Wait\n", 5);
+    fprintf(stderr, "connected\n");
 
-
-    close(soc);
-
+    return soc;
 }
