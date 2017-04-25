@@ -34,11 +34,11 @@ static WINDOW *win;
 
 static void hide(PLAYER *who);
 static void show(PLAYER *who);
-static void update(PLAYER *who, int c);
-static void interpret(PLAYER *who);
+static int update(PLAYER *who, int c);
+static int interpret(PLAYER *who);
 static void die();
 
-void session_init(int soc, char me, int mx, int my, int pc, int px, int py) {
+void session_init(int soc, char mc, int mx, int my, int pc, int px, int py) {
     session_soc = soc;
     width = soc + 1;
     FD_ZERO(&mask);
@@ -88,7 +88,7 @@ void session_loop() {
         if ( FD_ISSET(session_soc, &readOk) ) {
             read(session_soc, buf, BUF_LEN);
             hide(&peer);
-            flag = interpret(&peer, c);
+            flag = interpret(&peer);
             show(&peer);
             if (flag == 0) break;
         }
