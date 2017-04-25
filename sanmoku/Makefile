@@ -2,15 +2,18 @@ MYLIBDIR =../mylib
 MYLIB = $(MYLIBDIR)/mylib.a
 CFLAGS = -I$(MYLIBDIR)
 
-all: s c
+all: bin bin/s bin/c
 
-s: server.o goban.o
+bin:
+	mkdir $@
+
+bin/s: server.o goban.o
 	$(CC) -o $@ $^ $(MYLIB)
 
-c: client.o goban.o
+bin/c: client.o goban.o
 	$(CC) -o $@ $^ $(MYLIB)
 
 server.o client.o: goban.h
 
 clean:
-	$(RM) s c *.o *~
+	$(RM) bin/s bin/c *.o *~

@@ -2,15 +2,18 @@ MYLIBDIR =../mylib
 MYLIB = $(MYLIBDIR)/mylib.a
 CFLAGS = -I$(MYLIBDIR)
 
-all: s c
+all: bin bin/s bin/c
 
-s: server.o session.o
+bin:
+	mkdir $@
+
+bin/s: server.o session.o
 	$(CC) -o $@ $^ $(MYLIB) -lncurses
 
-c: client.o session.o
+bin/c: client.o session.o
 	$(CC) -o $@ $^ $(MYLIB) -lncurses
 
 server.o client.o: tag.h session.h
 
 clean:
-	$(RM) s c *.o *~
+	$(RM) bin/s bin/c *.o *~
