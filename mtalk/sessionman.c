@@ -90,8 +90,8 @@ static void ending() {
 static void send_all(int i, int n) {
     int j;
     for (j=0; j<attendants; j++) {
-        write(p[i].fd, p[i].name, strlen(p[i].name));
-        write(p[i].fd, buf, n);
+        write(p[j].fd, p[i].name, strlen(p[i].name));
+        write(p[j].fd, buf, n);
     }
 }
 

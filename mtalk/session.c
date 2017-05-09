@@ -33,14 +33,14 @@ void session_init(int soc) {
     initscr();
     signal(SIGINT, die);
 
-    frame_send = newwin(RECV_WIN_HEIGHT + 2, RECV_WIN_WIDTH + 2, 18, 0);
+    frame_send = newwin(SEND_WIN_HEIGHT + 2, SEND_WIN_WIDTH + 2, 18, 0);
     win_send = newwin(SEND_WIN_HEIGHT, SEND_WIN_WIDTH, 19, 1);
     box(frame_send, '|', '-');
     scrollok(win_send, TRUE);
     wmove(win_send, 0, 0);
 
-    frame_recv = newwin(RECV_WIN_HEIGHT + 2, RECV_WIN_WIDTH + 2, 18, 0);
-    win_recv = newwin(SEND_WIN_HEIGHT, SEND_WIN_WIDTH, 19, 1);
+    frame_recv = newwin(RECV_WIN_HEIGHT + 2, RECV_WIN_WIDTH + 2, 0, 0);
+    win_recv = newwin(RECV_WIN_HEIGHT, RECV_WIN_WIDTH, 1, 1);
     box(frame_recv, '|', '-');
     scrollok(win_recv, TRUE);
     wmove(win_recv, 0, 0);
@@ -93,8 +93,8 @@ void session_loop() {
             waddch(win_send, c);
         }
 
-            wrefresh(win_send);
-        }
+        wrefresh(win_send);
+    }
 
     if (FD_ISSET(session_soc, &readOk)) {
         n = read(session_soc, recv_buf, BUF_LEN);

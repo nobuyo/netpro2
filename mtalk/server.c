@@ -14,10 +14,12 @@ main(int argc, char *argv[]) {
 
     if ((num = atoi(argv[1]))<=0 || num > MAX_ATTENDANTS) {
         fprintf(stderr, "attendants limit= %d\n", MAX_ATTENDANTS);
+        exit(1);
     }
 
     if ((soc = mserver_maccept(PORT, num)) == -1) {
         fprintf(stderr, "cannot setup server.\n");
+        exit(1);
     }
 
     maxfd = mserver_maccept(soc, num, enter);
