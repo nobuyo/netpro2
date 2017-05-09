@@ -10,7 +10,7 @@
 #define SEND_WIN_HEIGHT 1
 
 #define RECV_WIN_WIDTH 60
-#define RECV_WIN_HEIGHT 1
+#define RECV_WIN_HEIGHT 13
 
 static WINDOW *win_send, *win_recv;
 static WINDOW *frame_send, *frame_recv;
