@@ -1,8 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "sessionman.h"
 #include "mylib.h"
 
-main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     int num;
     int soc;
     int maxfd;
@@ -17,7 +18,7 @@ main(int argc, char *argv[]) {
         exit(1);
     }
 
-    if ((soc = mserver_maccept(PORT, num)) == -1) {
+    if ((soc = mserver_socket(PORT, num)) == -1) {
         fprintf(stderr, "cannot setup server.\n");
         exit(1);
     }

@@ -10,10 +10,10 @@ bin:
 	mkdir $@
 
 bin/s: $(OBJS1)
-	$(CC) -o $@ $^ $(MYLIB) -lncurses
+	$(CC) -g -o $@ $^ $(MYLIB) -lncurses
 
 bin/c: $(OBJS2)
-	$(CC) -o $@ $^ $(MYLIB) -lncurses
+	$(CC) -g -o $@ $^ $(MYLIB) -lncurses
 
 server.o: sessionman.h
 

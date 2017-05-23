@@ -70,7 +70,7 @@ void session_loop() {
         if ( FD_ISSET(0, &readOk) ) {
             c = getchar();
 
-            if (c = '\b' || c == 0x10 || c == 0x7F) {
+            if (c == '\b' || c == 0x10 || c == 0x7F) {
                 if (len == 0) continue;
 
                 len--;
