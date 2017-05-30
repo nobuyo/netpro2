@@ -1,5 +1,7 @@
-#include <stdlib.h>
+#include <stdio.h>
 #include <sys/types.h>
+#include <stdlib.h>
+#include <string.h>
 #include "race.h"
 
 #define MAX_DAMAGE 10
@@ -34,10 +36,10 @@ void enter(int i, int fd) {
 
     sprintf(mesg, "%d\n", i);
     write(soc[i], mesg, strlen(mesg) + 1);
-    printf("[%d] %s\n" i, name[i]);
+    printf("[%d] %s\n", i, name[i]);
 }
 
-void session_init(int n, int fin, int maxfd) {
+void sessionman_init(int n, int fin, int maxfd) {
     int i;
     static char mesg[10];
 
@@ -53,14 +55,14 @@ void session_init(int n, int fin, int maxfd) {
 
     sprintf(mesg, "%d %d\n", num, final);
     for (i=0; i<num; i++) {
-        write(soc[i], mesg, 10)
+        write(soc[i], mesg, 10);
     }
 
     reached = 0;
     crashed = 0;
 }
 
-void session_loop() {
+void sessionman_loop() {
     while(reached + crashed < num) {
         recv_data();
         send_data();
@@ -79,14 +81,14 @@ static void recv_data() {
             read(soc[i], &p[i * PLAYER_SIZE], PLAYER_SIZE);
 
             if (p[i * PLAYER_SIZE + DAMAGE] >= MAX_DAMAGE) {
-                g[(num-crashed-1) * GRADE_SIZE + ENDRYNUM] = i;
-                strcpy(&g[(num-crashed-1) * GRADE_SIZE + ENDRYNAME], name[i]);
+                g[(num-crashed-1) * GRADE_SIZE + ENTRYNUM] = i;
+                strcpy(&g[(num-crashed-1) * GRADE_SIZE + ENTRYNAME], name[i]);
                 crashed++;
             }
 
             if (p[i * PLAYER_SIZE + STAGE] > final) {
                 g[reached * GRADE_SIZE + STAGE] = (char)i;
-                strcpy(&g[reached * GRADE_SIZE + ENDRYNAME], name[i]);
+                strcpy(&g[reached * GRADE_SIZE + ENTRYNAME], name[i]);
                 reached++;
             }
         }

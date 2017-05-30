@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ncurses.h>
 #include <signal.h>
 #include "race.h"
@@ -35,7 +39,7 @@ void session_init(int s) {
     soc = s;
 
     read(soc,buf, BUF_LENGTH);
-    printf(buf);
+    printf("%s", buf);
     fgets(buf,BUF_LENGTH,stdin);
     chop_newline(buf, BUF_LENGTH);
 
@@ -44,9 +48,9 @@ void session_init(int s) {
     sscanf(buf, "%d", &entry_num);
     printf("Your entry number is %d\n", entry_num);
     read(soc, buf, BUF_LENGTH);
-    sscanf(bug, "%d %d", &num, &final);
+    sscanf(buf, "%d %d", &num, &final);
     printf("players are %d\n", num);
-    printf("final stage is %s\n", final);
+    printf("final stage is %d\n", final);
 
     signal(SIGINT, die);
     signal(SIGQUIT, die);
@@ -69,9 +73,9 @@ void session_init(int s) {
 
     init_data();
 
-    mvprintw(win2, 2, 1, "Entry Num=%d, entry_num");
-    mvprintw(win2, 3, 2, "num stage damage");
-    mvprintw(win2, entry_num+4, 1, "*");
+    mvwprintw(win2, 2, 1, "Entry Num=%d", entry_num);
+    mvwprintw(win2, 3, 2, "num stage damage");
+    mvwprintw(win2, entry_num+4, 1, "*");
 
     show_all_locations();
 }
@@ -118,7 +122,7 @@ static int get_my_location() {
             }
         }
 
-        else if (check(0.-1) == 1)
+        else if (check(0,-1) == 1)
             temp[YPOS]--;
         else
             temp[DAMAGE]++;
@@ -190,11 +194,11 @@ static int new_stage(int z) {
 
     sprintf(buf, "data/data%d", z);
     fp = fopen(buf, "r");
-    for(i=1, i<=STAGE_LENGTH; i++) {
+    for (i=1; i<=STAGE_LENGTH; i++) {
         fgets(buf, 16, fp);
-        bug[10] = '\0';
+        buf[10] = '\0';
         wmove(win1, i, 1);
-        waddscr(win1, buf);
+        waddstr(win1, buf);
     }
     fclose(fp);
     return 1;
@@ -213,8 +217,8 @@ static void ending(int how) {
 
     read(soc,g,GRADE_SIZE*num);
     for (i=0; i<num; i++) {
-        mvwprintw(win2, i+3, 1, "[%d] %d: %s", i+1, (int)g[i * GRADE_SIZE + ENRTYNUM],
-         &g[i * GRADE_SIZE + ENRTYNAME]);
+        mvwprintw(win2, i+3, 1, "[%d] %d: %s", i+1, (int)g[i * GRADE_SIZE + ENTRYNUM],
+         &g[i * GRADE_SIZE + ENTRYNAME]);
     }
     wrefresh(win2);
     getchar();
