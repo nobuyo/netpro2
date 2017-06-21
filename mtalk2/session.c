@@ -1,11 +1,14 @@
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <signal.h>
+#include <time.h>
 #include <ncurses.h>
 #include "mtalk2.h"
+#include "session.h"
 
 #define MYNAME_LENGTH 12
 #define SEND_WIN_WIDTH 60
@@ -16,7 +19,8 @@
 static char send_buf[BUF_LEN];
 static char *input_buf;
 static char recv_buf[BUF_LEN];
-static char soc;
+static char replaced_buf[BUF_LEN * 3];
+static int soc;
 static fd_set mask;
 static int width;
 static struct sockaddr_in server;
@@ -33,8 +37,10 @@ static void die();
 static int login();
 static void logout();
 
-int session_setupclient(char *hostname, in_port_t port) {
+int session_setupclient(char *hostname, in_port_t port)
+{
     struct hostent *server_ent;
+
     if ((server_ent = gethostbyname(hostname)) == NULL) {
         perror("gethostbyname");
         return -1;
@@ -55,47 +61,44 @@ int session_setupclient(char *hostname, in_port_t port) {
     me.sin_addr.s_addr = htonl(INADDR_ANY);
     me.sin_port = 0;
 
-    if (bind(soc, &me, sizeof(me)) == -1) {
+    if (bind(soc, (const struct sockaddr *)&me, sizeof(me)) == -1) {
         perror("bind");
         return -1;
     }
-
     printf("successfully bound.\n");
     return login();
 }
 
-static int login() {
+static int login()
+{
     send_buf[0] = LOGIN;
-
-    printf("Your name?");
+    printf("Your name?\n");
     fgets(myname, MYNAME_LENGTH, stdin);
     chop_newline(myname, MYNAME_LENGTH);
 
     strcpy(send_buf + 1, myname);
-    sendto(soc, send_buf, strlen(send_buf)+1, 0, &server, sizeof(server));
+    sendto(soc, send_buf, strlen(send_buf) + 1, 0, (const struct sockaddr *)&server, sizeof(server));
     fromlen = sizeof(from);
-    recvfrom(soc, recv_buf, BUF_LEN, 0, &from, &fromlen);
+    recvfrom(soc, recv_buf, BUF_LEN, 0, (struct sockaddr * __restrict__)&from, &fromlen);
 
     if ((u_char)recv_buf[0] == CANNOT_LOGIN) {
-        printf("cannot login\n");
+        printf("cannot login.\n");
         return -1;
-    }
-    else if ((u_char)recv_buf[0] == LOGIN_OK) {
-        sscanf(recv_buf+1, "%02d", &my_slot);
+    } else if ((u_char)recv_buf[0] == LOGIN_OK) {
+        sscanf(recv_buf + 1, "%20d", &my_slot);
         send_buf[0] = DATA;
         sprintf(send_buf + 1, "%-10s-> ", myname);
         input_buf = send_buf + 14;
-
         printf("You have logged in.\n");
         return 1;
-    }
-    else {
-        printf("recv_buf[0] == %u", (u_char)recv_buf[0]);
+    } else {
+        printf("recv_buf[0] == %u\n", (u_char)recv_buf[0]);
         return -2;
     }
 }
 
-void session_init() {
+void session_init()
+{
     width = soc + 1;
     FD_ZERO(&mask);
     FD_SET(0, &mask);
@@ -125,63 +128,127 @@ void session_init() {
     wrefresh(win_send);
 }
 
-void session_loop() {
-    int c, flag;
+void session_loop()
+{
+    int c;
+    int flag = 1;
     fd_set readOk;
-    int len;
-    int i;
-    int x,y;
+    int len = 0;
+    int i,j;
+    int y, x;
     int n;
+    int count = 0;
+    char date[64];
 
-    flag = 1;
-    len = 0;
-
-    while(1) {
+    while (1) {
         readOk = mask;
         select(width, (fd_set *)&readOk, NULL, NULL, NULL);
 
-        if ( FD_ISSET(0, &readOk) ) {
+        // has input from keyboard
+        if (FD_ISSET(0, &readOk)) {
             c = getchar();
 
+            // backspace
             if (c == '\b' || c == 0x10 || c == 0x7F) {
-                if (len == 0) continue;
-
+                if (len == 0) {
+                    continue;
+                }
                 len--;
                 getyx(win_send, y, x);
                 wmove(win_send, y, x-1);
                 waddch(win_send, ' ');
                 wmove(win_send, y, x-1);
             }
-
             else if (c == '\n' || c == '\r') {
                 input_buf[len++] = '\n';
-                sendto(soc, send_buf, len+14, 0, &server, sizeof(server));
+                sendto(soc, send_buf, len + 14, 0, (const struct sockaddr *)&server, sizeof(server));
 
+                // Clearing the send window
                 wclear(win_send);
                 len = 0;
             }
-
             else {
                 input_buf[len++] = c;
                 waddch(win_send, c);
             }
-
             wrefresh(win_send);
         }
 
+        // if data in socket
         if (FD_ISSET(soc, &readOk)) {
             fromlen = sizeof(from);
-            n = recvfrom(soc, recv_buf, BUF_LEN, 0, &from, &fromlen);
-
-
+            n = recvfrom(soc, recv_buf, BUF_LEN, 0, (struct sockaddr * __restrict__)&from, &fromlen);
             if ((u_char)recv_buf[0] == DATA) {
-                for (i=0; i<n; i++) {
-                    waddch(win_recv, recv_buf[i]);
+                for (i = 1,j = 0; i < n; i++,j++) {
+                    if (i < n && recv_buf[i] == ':') {
+                        switch(recv_buf[i+1]) {
+                            case 'D':
+                                j = replace(replaced_buf, "(^_^)", j);
+                                i+=2;
+                                count+=3;
+                                break;
+                            case 'X':
+                                j = replace(replaced_buf, "(T.T)", j);
+                                i+=2;
+                                count+=3;
+                                break;
+                            case 'O':
+                                j = replace(replaced_buf, "(^O^)", j);
+                                i+=2;
+                                count+=3;
+                                break;
+                            case '(':
+                                j = replace(replaced_buf, "(*_*)", j);
+                                i+=2;
+                                count+=3;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    //todo: support burst input like ':D:D:D'
+
+                    if (i < n-5
+                        && recv_buf[i] == '\\'
+                        && recv_buf[i+1] == 't'
+                        && recv_buf[i+2] == 'i'
+                        && recv_buf[i+3] == 'm'
+                        && recv_buf[i+4] == 'e'
+                        ) 
+                    {
+                        time_t t = time(NULL);
+                        strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
+                        j = replace(replaced_buf, date, j);
+                        i+=5;
+                        count+=(strlen(date)-5);
+                    }
+
+                    // if (i < n-3
+                    //     && recv_buf[i] == '\\'
+                    //     && recv_buf[i+1] == 'm'
+                    //     && recv_buf[i+2] == 'e'
+                    //     ) 
+                    // {
+                    //     j = replace(replaced_buf, myname, j);
+                    //     i+=3;
+                    //     count+=(strlen(myname)-3);
+                    // }
+                    
+                    replaced_buf[j] = recv_buf[i];
                 }
+
+                for (i = 0; i < n + count - 1; i++) {
+                    waddch(win_recv, replaced_buf[i]);
+                }
+                clear_buf(replaced_buf, BUF_LEN * 3);
+                count = 0;
+
             }
             else if ((u_char)recv_buf[0] == END) {
                 flag = 0;
             }
+
             wrefresh(win_recv);
 
             wrefresh(win_send);
@@ -193,16 +260,37 @@ void session_loop() {
     die();
 }
 
-static void die() {
-    endwin();
-    logout();
-    close();
-    exit(1);
+int replace(char *replaced, char *face, int n)
+{
+    int i = 0;
+    int c = n;
+    while(face[i] != '\0') {
+        replaced[c] = face[i];
+        i++;
+        c++;
+    }
+
+    return c;
 }
 
-static void logout() {
-    send_buf[0] = LOGOUT;
-    sprintf(send_buf+1, "%02d\n", my_slot);
+void clear_buf(char *buf, int n) {
+    int i;
+    for (i = 0; i < n; i++) {
+        buf[i] = '\0';
+    }
+}
 
-    sendto(soc, send_buf, 4, 0, &server, sizeof(server));
+static void die()
+{
+    endwin();
+    logout();
+    close(soc);
+    exit(0);
+}
+
+static void logout()
+{
+    send_buf[0] = LOGOUT;
+    sprintf(send_buf + 1, "%20d\n", my_slot);
+    sendto(soc, send_buf, 4, 0, (const struct sockaddr *)&server, sizeof(server));
 }
