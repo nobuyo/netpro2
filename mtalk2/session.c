@@ -181,7 +181,22 @@ void session_loop()
                     if (i < n-1 && recv_buf[i] == ':') {
                         switch(recv_buf[i+1]) {
                             case 'D':
-                                j = replace(replaced_buf, "(^.^)", j);
+                                j = replace(replaced_buf, "(^_^)", j);
+                                i+=2;
+                                count+=3;
+                                break;
+                            case 'X':
+                                j = replace(replaced_buf, "(T.T)", j);
+                                i+=2;
+                                count+=3;
+                                break;
+                            case 'O':
+                                j = replace(replaced_buf, "(^O^)", j);
+                                i+=2;
+                                count+=3;
+                                break;
+                            case '(':
+                                j = replace(replaced_buf, "(*_*)", j);
                                 i+=2;
                                 count+=3;
                                 break;
