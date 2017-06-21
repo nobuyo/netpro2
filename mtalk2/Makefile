@@ -6,6 +6,12 @@ OBJS2 = client.o session.o
 
 all: bin bin/s bin/c
 
+serve:
+	./bin/s
+
+client:
+	./bin/c
+
 bin:
 	mkdir $@
 

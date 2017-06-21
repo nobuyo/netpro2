@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -8,6 +7,7 @@
 #include <signal.h>
 #include <ncurses.h>
 #include "mtalk2.h"
+#include "session.h"
 
 #define MYNAME_LENGTH 12
 #define SEND_WIN_WIDTH 60
@@ -136,6 +136,7 @@ void session_loop()
     int i,j;
     int y, x;
     int n;
+    int count = 0;
 
     while (1) {
         readOk = mask;
@@ -176,28 +177,31 @@ void session_loop()
             fromlen = sizeof(from);
             n = recvfrom(soc, recv_buf, BUF_LEN, 0, (struct sockaddr * __restrict__)&from, &fromlen);
             if ((u_char)recv_buf[0] == DATA) {
-                for (i = 1,j = 1; i < n; i++,j++) {
+                for (i = 1,j = 0; i < n; i++,j++) {
                     if (i < n-1 && recv_buf[i] == ':') {
                         switch(recv_buf[i+1]) {
                             case 'D':
                                 j = replace(replaced_buf, "(^.^)", j);
                                 i+=2;
+                                count+=3;
                                 break;
                             default:
                                 break;
                         }
                     }
+                    
                     replaced_buf[j] = recv_buf[i];
                 }
 
-                for (i = 1; i < n; i++) {
-                    waddch(win_recv, recv_buf[i]);
+                // for (i = 0; i < n; i++) {
+                //     waddch(win_recv, recv_buf[i]);
+                // }
+                for (i = 0; i < n + count - 1; i++) {
+                    waddch(win_recv, replaced_buf[i]);
                 }
-                i = 0;
-                while(replaced_buf[i] != '\0') {
-                    printf("%c", replaced_buf[i]);
-                    i++;
-                }
+                clear_buf(replaced_buf, BUF_LEN * 3);
+                count = 0;
+
             }
             else if ((u_char)recv_buf[0] == END) {
                 flag = 0;
@@ -225,6 +229,13 @@ int replace(char *replaced, char *face, int n)
     }
 
     return c;
+}
+
+void clear_buf(char *buf, int n) {
+    int i;
+    for (i = 0; i < n; i++) {
+        buf[i] = '\0';
+    }
 }
 
 static void die()
