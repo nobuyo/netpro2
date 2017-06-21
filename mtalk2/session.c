@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <signal.h>
+#include <time.h>
 #include <ncurses.h>
 #include "mtalk2.h"
 #include "session.h"
@@ -137,6 +138,7 @@ void session_loop()
     int y, x;
     int n;
     int count = 0;
+    char date[64];
 
     while (1) {
         readOk = mask;
@@ -178,7 +180,7 @@ void session_loop()
             n = recvfrom(soc, recv_buf, BUF_LEN, 0, (struct sockaddr * __restrict__)&from, &fromlen);
             if ((u_char)recv_buf[0] == DATA) {
                 for (i = 1,j = 0; i < n; i++,j++) {
-                    if (i < n-1 && recv_buf[i] == ':') {
+                    if (i < n && recv_buf[i] == ':') {
                         switch(recv_buf[i+1]) {
                             case 'D':
                                 j = replace(replaced_buf, "(^_^)", j);
@@ -204,13 +206,38 @@ void session_loop()
                                 break;
                         }
                     }
+
+                    //todo: support burst input like ':D:D:D'
+
+                    if (i < n-5
+                        && recv_buf[i] == '\\'
+                        && recv_buf[i+1] == 't'
+                        && recv_buf[i+2] == 'i'
+                        && recv_buf[i+3] == 'm'
+                        && recv_buf[i+4] == 'e'
+                        ) 
+                    {
+                        time_t t = time(NULL);
+                        strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
+                        j = replace(replaced_buf, date, j);
+                        i+=5;
+                        count+=(strlen(date)-5);
+                    }
+
+                    // if (i < n-3
+                    //     && recv_buf[i] == '\\'
+                    //     && recv_buf[i+1] == 'm'
+                    //     && recv_buf[i+2] == 'e'
+                    //     ) 
+                    // {
+                    //     j = replace(replaced_buf, myname, j);
+                    //     i+=3;
+                    //     count+=(strlen(myname)-3);
+                    // }
                     
                     replaced_buf[j] = recv_buf[i];
                 }
 
-                // for (i = 0; i < n; i++) {
-                //     waddch(win_recv, recv_buf[i]);
-                // }
                 for (i = 0; i < n + count - 1; i++) {
                     waddch(win_recv, replaced_buf[i]);
                 }
