@@ -183,6 +183,11 @@ void session_loop()
                     if (i < n && recv_buf[i] == ':') {
                         switch(recv_buf[i+1]) {
                             case 'D':
+                                j = replace(replaced_buf, "(^o^)", j);
+                                i+=2;
+                                count+=3;
+                                break;
+                            case ')':
                                 j = replace(replaced_buf, "(^_^)", j);
                                 i+=2;
                                 count+=3;
@@ -193,12 +198,22 @@ void session_loop()
                                 count+=3;
                                 break;
                             case 'O':
-                                j = replace(replaced_buf, "(^O^)", j);
+                                j = replace(replaced_buf, "(*O*)", j);
                                 i+=2;
                                 count+=3;
                                 break;
                             case '(':
-                                j = replace(replaced_buf, "(*_*)", j);
+                                j = replace(replaced_buf, "(;_;)", j);
+                                i+=2;
+                                count+=3;
+                                break;
+                            case 'I':
+                                j = replace(replaced_buf, "(-_-;)", j);
+                                i+=2;
+                                count+=4;
+                                break;
+                            case 'P':
+                                j = replace(replaced_buf, "(^p^)", j);
                                 i+=2;
                                 count+=3;
                                 break;
@@ -215,7 +230,7 @@ void session_loop()
                         && recv_buf[i+2] == 'i'
                         && recv_buf[i+3] == 'm'
                         && recv_buf[i+4] == 'e'
-                        ) 
+                        )
                     {
                         time_t t = time(NULL);
                         strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
@@ -228,13 +243,13 @@ void session_loop()
                     //     && recv_buf[i] == '\\'
                     //     && recv_buf[i+1] == 'm'
                     //     && recv_buf[i+2] == 'e'
-                    //     ) 
+                    //     )
                     // {
                     //     j = replace(replaced_buf, myname, j);
                     //     i+=3;
                     //     count+=(strlen(myname)-3);
                     // }
-                    
+
                     replaced_buf[j] = recv_buf[i];
                 }
 
